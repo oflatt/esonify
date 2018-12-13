@@ -28,6 +28,9 @@
 
 ;;; Code:
 
+(defvar esonify-start-delay 0.4)
+(defvar esonify-read-speed 0.1)
+
 (defvar esoundifyonp t "if esoundify is on")
 
 (defconst esonify--el-source-dir
@@ -46,9 +49,47 @@
 (defun playtriangle(num)
   (sound-wav-play (concat soundpath "/triangle" (number-to-string (% num 37)) "_30.wav")))
 
+(defvar linetoprocess nil)
+
+(defvar currenttimer nil)
+
+(defun processline ()
+  (processchar (string-to-char linetoprocess))
+  (if (> (length linetoprocess) 0)
+      (progn
+	(setq linetoprocess (substring linetoprocess 1))
+	(setq currenttimer (run-at-time esonify-read-speed nil 'processline)))))
+
+(defun processchar (c)
+  (cond
+					; backspace
+   ((eq c 127)
+    (playdrum 25))
+					; space
+   ((eq c 32)
+    (playdrum 2))
+					; enter
+   ((eq c 13)
+    (playdrum 12))
+   
+   ((and (>= c 97) (<= c 122))
+    (playsine c))
+   ((and (>= c 65) (<= c 90))
+    (sound-wav-play (concat soundpath "/square" (number-to-string (gethash (+ c 32) alphabetmap)) "_25" ".wav")))
+   
+   (t
+    (playtriangle c))))
+   
 (defun makesound ()
   (if esoundifyonp
       (progn
+					; set up processing the current line
+	(if
+	    (timerp currenttimer)
+	    (cancel-timer currenttimer))
+	(setq linetoprocess (thing-at-point 'line t))
+	(setq currenttimer (run-at-time esonify-start-delay nil 'processline))
+	
 	; make arrows the same as movement commands
 	(if (symbolp last-command-event)
 	    (let ((name (symbol-name last-command-event)))
@@ -66,24 +107,7 @@
 		(playtriangle (string-to-number name))))))
 	
 	(if (integerp last-command-event)
-	    (cond
-	     ; backspace
-	     ((eq last-command-event 127)
-	      (playdrum 25))
-					; space
-	     ((eq last-command-event 32)
-	      (playdrum 2))
-	      		; enter
-	     ((eq last-command-event 13)
-	      (playdrum 12))
-	     
-	     ((and (>= last-command-event 97) (<= last-command-event 122))
-		   (playsine last-command-event))
-	     ((and (>= last-command-event 65) (<= last-command-event 90))
-	      (sound-wav-play (concat soundpath "/square" (number-to-string (gethash (+ last-command-event 32) alphabetmap)) "_25" ".wav")))
-	     
-	     (t
-	      (playtriangle last-command-event)))))))
+	    (processchar last-command-event)))))
 
 (add-hook 'post-command-hook 'makesound)
 
