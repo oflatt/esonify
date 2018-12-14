@@ -118,4 +118,3 @@
       (setq esoundifyonp nil)
     (setq esoundifyonp t)))
 
-(provide 'esonify)
