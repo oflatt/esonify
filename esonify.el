@@ -111,8 +111,11 @@
 
 (add-hook 'post-command-hook 'makesound)
 
+;;###autoload
 (defun toggle-esoundify ()
   (interactive)
   (if esoundifyonp
       (setq esoundifyonp nil)
     (setq esoundifyonp t)))
+
+(provide 'esonify)
