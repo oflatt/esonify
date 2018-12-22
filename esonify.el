@@ -113,12 +113,12 @@
 (define-minor-mode esonify-mode
   "esonify mode toggle"
   :group 'esonify
-  (add-hook 'post-command-hook 'makesound))
+  :global t
+  (if esonify-mode
+      (add-hook 'post-command-hook 'makesound)
+    (remove-hook 'post-command-hook 'makesound t)))
 
 
-(defun toggle-esoundify ()
-  (interactive)
-  (if esoundifyonp
-      (setq esoundifyonp nil)
-    (setq esoundifyonp t)))
+
+
 
