@@ -109,9 +109,13 @@
 	(if (integerp last-command-event)
 	    (processchar last-command-event)))))
 
-(add-hook 'post-command-hook 'makesound)
+;;;###autoload
+(define-minor-mode esonify-mode
+  "esonify mode toggle"
+  :group 'esonify
+  (add-hook 'post-command-hook 'makesound))
 
-;;###autoload
+
 (defun toggle-esoundify ()
   (interactive)
   (if esoundifyonp
