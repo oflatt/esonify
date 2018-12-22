@@ -54,9 +54,9 @@
 (defvar currenttimer nil)
 
 (defun processline ()
-  (processchar (string-to-char linetoprocess))
   (if (> (length linetoprocess) 0)
       (progn
+	(processchar (string-to-char linetoprocess))
 	(setq linetoprocess (substring linetoprocess 1))
 	(setq currenttimer (run-at-time esonify-read-speed nil 'processline)))))
 
@@ -116,7 +116,7 @@
   :global t
   (if esonify-mode
       (add-hook 'post-command-hook 'makesound)
-    (remove-hook 'post-command-hook 'makesound t)))
+    (remove-hook 'post-command-hook 'makesound)))
 
 
 
