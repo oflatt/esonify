@@ -30,8 +30,6 @@
 (defvar esonify--start-delay 0.4)
 (defvar esonify--read-speed 0.1)
 
-(defvar esonify--onp t "if esoundify is on")
-
 (defconst esonify--el-source-dir
   (file-name-directory (or load-file-name (buffer-file-name))))
   
@@ -53,6 +51,8 @@
 (defvar esonify--current-timer nil)
 
 (defun esonify--process-line ()
+  "Processes one line of text stored in esonify--line-to-process."
+  
   (if (> (length esonify--line-to-process) 0)
       (progn
 	(esonify--processchar (string-to-char esonify--line-to-process))
@@ -60,6 +60,7 @@
 	(setq esonify--current-timer (run-at-time esonify--read-speed nil 'esonify--process-line)))))
 
 (defun esonify--processchar (c)
+  "Plays the sound corresponding to the char C."
   (cond
 					; backspace
    ((eq c 127)
@@ -78,35 +79,35 @@
    
    (t
     (esonify--play-triangle c))))
-   
-(defun esonify--makesound ()
-  (if esonify--onp
-      (progn
-	; set up processing the current line
-	(if
-	    (timerp esonify--current-timer)
-	    (cancel-timer esonify--current-timer))
-	(setq esonify--line-to-process (thing-at-point 'line t))
-	(setq esonify--current-timer (run-at-time esonify--start-delay nil 'esonify--process-line))
-	
-	; make arrows the same as movement commands
-	(if (symbolp last-command-event)
-	    (let ((name (symbol-name last-command-event)))
-	      (cond
-	       ((string= name "up")
-		(esonify--play-triangle ?\C-p))
-	       ((string= name "down")
-		(esonify--play-triangle ?\C-n))
-	       ((string= name "left")
-		(esonify--play-triangle ?\C-b))
-	       ((string= name "right")
-		(esonify--play-triangle ?\C-f))
 
-	       (t
-		(esonify--play-triangle (string-to-number name))))))
-	
-	(if (integerp last-command-event)
-	    (esonify--processchar last-command-event)))))
+(defun esonify--makesound ()
+  "Plays the character last typed and start up processing the current line."
+  (progn
+					; set up processing the current line
+    (if
+	(timerp esonify--current-timer)
+	(cancel-timer esonify--current-timer))
+    (setq esonify--line-to-process (thing-at-point 'line t))
+    (setq esonify--current-timer (run-at-time esonify--start-delay nil 'esonify--process-line))
+    
+					; make arrows the same as movement commands
+    (if (symbolp last-command-event)
+	(let ((name (symbol-name last-command-event)))
+	  (cond
+	   ((string= name "up")
+	    (esonify--play-triangle ?\C-p))
+	   ((string= name "down")
+	    (esonify--play-triangle ?\C-n))
+	   ((string= name "left")
+	    (esonify--play-triangle ?\C-b))
+	   ((string= name "right")
+	    (esonify--play-triangle ?\C-f))
+
+	   (t
+	    (esonify--play-triangle (string-to-number name))))))
+    
+    (if (integerp last-command-event)
+	(esonify--processchar last-command-event))))
 
 ;;;###autoload
 (define-minor-mode esonify-mode
