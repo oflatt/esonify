@@ -4,7 +4,6 @@
 
 ;; Author: Oliver Flatt <oflatt@gmail.com>
 ;; URL: https://github.com/oflatt/esonify
-;; Package-Version: 1
 ;; Version: 0.02
 ;; Package-Requires: ((sound-wav "0.02"))
 
@@ -28,97 +27,97 @@
 
 ;;; Code:
 
-(defvar esonify-start-delay 0.4)
-(defvar esonify-read-speed 0.1)
+(defvar esonify--start-delay 0.4)
+(defvar esonify--read-speed 0.1)
 
-(defvar esoundifyonp t "if esoundify is on")
+(defvar esonify--onp t "if esoundify is on")
 
 (defconst esonify--el-source-dir
   (file-name-directory (or load-file-name (buffer-file-name))))
   
-(defconst soundpath (expand-file-name "./sounds/" esonify--el-source-dir))
+(defconst esonify--soundpath (expand-file-name "./sounds/" esonify--el-source-dir))
 
-(defconst alphabetmap #s(hash-table size 26 data (122 0 120 1 99 2 118 3 98 4 110 5 109 6 97 7 115 8 100 9 102 10 103 11 104 12 106 13 107 14 108 15 113 16 119 17 101 18 114 19 116 20 121 21 117 22 105 23 111 24 112 25 )))
+(defconst esonify--alphabet-map #s(hash-table size 26 data (122 0 120 1 99 2 118 3 98 4 110 5 109 6 97 7 115 8 100 9 102 10 103 11 104 12 106 13 107 14 108 15 113 16 119 17 101 18 114 19 116 20 121 21 117 22 105 23 111 24 112 25 )))
 
-(defun playdrum(num)
-  (sound-wav-play (concat soundpath "/drum_" (number-to-string num) ".wav")))
+(defun esonify--play-drum(num)
+  (sound-wav-play (concat esonify--soundpath "/drum_" (number-to-string num) ".wav")))
 
-(defun playsine(num)
-  (sound-wav-play (concat soundpath "/sine" (number-to-string (gethash num alphabetmap)) "_1" ".wav")))
+(defun esonify--play-sine(num)
+  (sound-wav-play (concat esonify--soundpath "/sine" (number-to-string (gethash num esonify--alphabet-map)) "_1" ".wav")))
 
-(defun playtriangle(num)
-  (sound-wav-play (concat soundpath "/triangle" (number-to-string (% num 37)) "_30.wav")))
+(defun esonify--play-triangle(num)
+  (sound-wav-play (concat esonify--soundpath "/triangle" (number-to-string (% num 37)) "_30.wav")))
 
-(defvar linetoprocess nil)
+(defvar esonify--line-to-process nil)
 
-(defvar currenttimer nil)
+(defvar esonify--current-timer nil)
 
-(defun processline ()
-  (if (> (length linetoprocess) 0)
+(defun esonify--process-line ()
+  (if (> (length esonify--line-to-process) 0)
       (progn
-	(processchar (string-to-char linetoprocess))
-	(setq linetoprocess (substring linetoprocess 1))
-	(setq currenttimer (run-at-time esonify-read-speed nil 'processline)))))
+	(esonify--processchar (string-to-char esonify--line-to-process))
+	(setq esonify--line-to-process (substring esonify--line-to-process 1))
+	(setq esonify--current-timer (run-at-time esonify--read-speed nil 'esonify--process-line)))))
 
-(defun processchar (c)
+(defun esonify--processchar (c)
   (cond
 					; backspace
    ((eq c 127)
-    (playdrum 25))
+    (esonify--play-drum 25))
 					; space
    ((eq c 32)
-    (playdrum 2))
+    (esonify--play-drum 2))
 					; enter
    ((eq c 13)
-    (playdrum 12))
+    (esonify--play-drum 12))
    
    ((and (>= c 97) (<= c 122))
-    (playsine c))
+    (esonify--play-sine c))
    ((and (>= c 65) (<= c 90))
-    (sound-wav-play (concat soundpath "/square" (number-to-string (gethash (+ c 32) alphabetmap)) "_25" ".wav")))
+    (sound-wav-play (concat esonify--soundpath "/square" (number-to-string (gethash (+ c 32) esonify--alphabet-map)) "_25" ".wav")))
    
    (t
-    (playtriangle c))))
+    (esonify--play-triangle c))))
    
-(defun makesound ()
-  (if esoundifyonp
+(defun esonify--makesound ()
+  (if esonify--onp
       (progn
-					; set up processing the current line
+	; set up processing the current line
 	(if
-	    (timerp currenttimer)
-	    (cancel-timer currenttimer))
-	(setq linetoprocess (thing-at-point 'line t))
-	(setq currenttimer (run-at-time esonify-start-delay nil 'processline))
+	    (timerp esonify--current-timer)
+	    (cancel-timer esonify--current-timer))
+	(setq esonify--line-to-process (thing-at-point 'line t))
+	(setq esonify--current-timer (run-at-time esonify--start-delay nil 'esonify--process-line))
 	
 	; make arrows the same as movement commands
 	(if (symbolp last-command-event)
 	    (let ((name (symbol-name last-command-event)))
 	      (cond
 	       ((string= name "up")
-		(playtriangle ?\C-p))
+		(esonify--play-triangle ?\C-p))
 	       ((string= name "down")
-		(playtriangle ?\C-n))
+		(esonify--play-triangle ?\C-n))
 	       ((string= name "left")
-		(playtriangle ?\C-b))
+		(esonify--play-triangle ?\C-b))
 	       ((string= name "right")
-		(playtriangle ?\C-f))
+		(esonify--play-triangle ?\C-f))
 
 	       (t
-		(playtriangle (string-to-number name))))))
+		(esonify--play-triangle (string-to-number name))))))
 	
 	(if (integerp last-command-event)
-	    (processchar last-command-event)))))
+	    (esonify--processchar last-command-event)))))
 
 ;;;###autoload
 (define-minor-mode esonify-mode
   "esonify mode toggle"
   :group 'esonify
   :global t
+  :require 'esonify
   (if esonify-mode
-      (add-hook 'post-command-hook 'makesound)
-    (remove-hook 'post-command-hook 'makesound)))
+      (add-hook 'post-command-hook 'esonify--makesound)
+    (remove-hook 'post-command-hook 'esonify--makesound)))
 
+(provide 'esonify)
 
-
-
-
+;;; esonify.el ends here
