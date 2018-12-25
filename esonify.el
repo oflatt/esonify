@@ -27,7 +27,10 @@
 
 ;;; Code:
 
-(defvar esonify--start-delay 0.4)
+(defcustom esonify-play-curr-line-delay 0.4
+  "If non-nil set how long to wait before playing the current line."
+  :group 'esonify)
+
 (defvar esonify--read-speed 0.1)
 
 (defconst esonify--el-source-dir
@@ -86,11 +89,11 @@
   "Plays the character last typed and start up processing the current line."
   (progn
 					; set up processing the current line
-    (if
-	(timerp esonify--current-timer)
+    (if (timerp esonify--current-timer)
 	(cancel-timer esonify--current-timer))
     (setq esonify--line-to-process (thing-at-point 'line t))
-    (setq esonify--current-timer (run-at-time esonify--start-delay nil 'esonify--process-line))
+    (if esonify-play-curr-line-delay
+	(setq esonify--current-timer (run-at-time esonify-play-curr-line-delay nil 'esonify--process-line)))
     
 					; make arrows the same as movement commands
     (if (symbolp last-command-event)
