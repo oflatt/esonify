@@ -5,7 +5,7 @@
 ;; Author: Oliver Flatt <oflatt@gmail.com>
 ;; URL: https://github.com/oflatt/esonify
 ;; Version: 0.02
-;; Package-Requires: ((sound-wav "0.02"))
+;; Package-Requires: ()
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -31,24 +31,34 @@
   "If non-nil set how long to wait before playing the current line."
   :group 'esonify)
 
-(defvar esonify--read-speed 0.1)
+(defcustom esonify--read-speed .1
+  "Set how long to wait before playing consecutive characters in the current line."
+  :group 'esonify)
 
 (defconst esonify--el-source-dir
-  (file-name-directory (or load-file-name (buffer-file-name))))
+  (file-name-directory (or load-file-name (buffer-file-name)))
+  "Stores the source dir where esonify is stored locally.")
 
-(load-file (expand-file-name "./esonify-sound-wav.el" esonify--el-source-dir))
+(require 'sound-wav (expand-file-name "./esonify-sound-wav.el" esonify--el-source-dir))
 
-(defconst esonify--soundpath (expand-file-name "./sounds/" esonify--el-source-dir))
+(defconst esonify--soundpath
+  (expand-file-name "./sounds/" esonify--el-source-dir)
+  "Sores the path to the sounds.")
 
-(defconst esonify--alphabet-map #s(hash-table size 26 data (122 0 120 1 99 2 118 3 98 4 110 5 109 6 97 7 115 8 100 9 102 10 103 11 104 12 106 13 107 14 108 15 113 16 119 17 101 18 114 19 116 20 121 21 117 22 105 23 111 24 112 25 )))
+(defconst esonify--alphabet-map
+  #s(hash-table size 26 data (122 0 120 1 99 2 118 3 98 4 110 5 109 6 97 7 115 8 100 9 102 10 103 11 104 12 106 13 107 14 108 15 113 16 119 17 101 18 114 19 116 20 121 21 117 22 105 23 111 24 112 25 ))
+  "Maps ascii values from the ascii value for a lowercase letter to the order in which the character appears on a keyboard.")
 
 (defun esonify--play-drum(num)
+  "Plays one drum sound with pitch NUM."
   (esonify--sound-wav-play (concat esonify--soundpath "/drum_" (number-to-string num) ".wav")))
 
 (defun esonify--play-sine(num)
+  "Plays one sine sound with pitch NUM."
   (esonify--sound-wav-play (concat esonify--soundpath "/sine" (number-to-string (gethash num esonify--alphabet-map)) "_1" ".wav")))
 
 (defun esonify--play-triangle(num)
+  "Plays one triangle sound with pitch NUM."
   (esonify--sound-wav-play (concat esonify--soundpath "/triangle" (number-to-string (% num 37)) "_30.wav")))
 
 (defvar esonify--line-to-process nil)
@@ -56,7 +66,7 @@
 (defvar esonify--current-timer nil)
 
 (defun esonify--process-line ()
-  "Processes one line of text stored in esonify--line-to-process."
+  "Processes one line of text stored in 'esonify--line-to-process'."
   
   (if (> (length esonify--line-to-process) 0)
       (progn
