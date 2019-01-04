@@ -1,4 +1,4 @@
-;;; sound-wav.el --- Play wav file
+;;; esonify-sound-wav.el --- Play wav file
 
 ;; Copyright (C) 2016 by Syohei YOSHIDA
 
@@ -35,32 +35,34 @@
 (when (memq system-type '(windows-nt ms-dos cygwin))
   (require 'powershell nil t))
 
-(defgroup sound-wav nil
+(defgroup esonify-sound-wav nil
   "Play wav file"
   :group 'sound)
 
-(defvar sound-wav--powershell-process nil)
-(defsubst sound-wav--powershell-sound-player-process-p ()
+(defvar esonify-sound-wav--powershell-process nil)
+(defsubst esonify-sound-wav--powershell-sound-player-process-p ()
   "Create a powershell process to play windows files?"
   (and (memq system-type '(windows-nt ms-dos cygwin))
        (fboundp 'powershell)
        (executable-find "powershell")
        (save-excursion
-	 (or sound-wav--powershell-process
+	 (or esonify-sound-wav--powershell-process
 	     (let ((buf (current-buffer)))
 	       (and
-		(powershell " *sound-wav-powershell*")
+		(powershell " *esonify-sound-wav-powershell*")
 		(pop-to-buffer-same-window buf)
-		(setq sound-wav--powershell-process (get-buffer-process (get-buffer " *sound-wav-powershell*")))
-		(set-process-query-on-exit-flag sound-wav--powershell-process nil)
-		sound-wav--powershell-process))))))
+		(setq esonify-sound-wav--powershell-process (get-buffer-process (get-buffer " *esonify-sound-wav-powershell*")))
+		(set-process-query-on-exit-flag esonify-sound-wav--powershell-process nil)
+		esonify-sound-wav--powershell-process))))))
 
-(defun sound-wav--do-play-by-powershell-process (files)
-  (and sound-wav--powershell-process
-       (comint-send-string sound-wav--powershell-process
+(defun esonify-sound-wav--do-play-by-powershell-process (files &optional inturruptp)
+  (and esonify-sound-wav--powershell-process
+       (comint-send-string esonify-sound-wav--powershell-process
 			   (concat (mapconcat
 				    (lambda (file)
-				      (format "(New-Object Media.SoundPlayer \"%s\").Play()"
+				      (format (if inturruptp
+						  "(New-Object Media.SoundPlayer \"%s\").Play()"
+						  "(New-Object Media.SoundPlayer \"%s\").PlaySync()")
 					      (cond
 					       ((memq system-type '(cygwin))
 						(cygwin-convert-file-name-to-windows file))
@@ -69,30 +71,32 @@
 				    "\n") "\n"))))
 
 ;; Start powershell process to immediately parse sounds..
-(sound-wav--powershell-sound-player-process-p)
+(esonify-sound-wav--powershell-sound-player-process-p)
 
-(defsubst sound-wav--powershell-sound-player-p ()
+(defsubst esonify-sound-wav--powershell-sound-player-p ()
   "Is powershell available to play windows files?"
   (and (executable-find "powershell")
        (memq system-type '(windows-nt ms-dos cygwin))))
 
-(defun sound-wav--do-play-by-powershell (files)
+(defun esonify-sound-wav--do-play-by-powershell (files &optional inturruptp)
   (deferred:$
     (deferred:process
       "powershell"
       "-c"
       (mapconcat
        (lambda (file)
-         (format "(New-Object Media.SoundPlayer \"%s\").Play()"
+         (format (if inturruptp
+		     "(New-Object Media.SoundPlayer \"%s\").Play()"
+		   "(New-Object Media.SoundPlayer \"%s\").PlaySync()")
                  file))
        files
        ";"))))
 
-(defsubst sound-wav--window-media-player-p ()
+(defsubst esonify-sound-wav--window-media-player-p ()
   (and (executable-find "ruby")
        (memq system-type '(windows-nt ms-dos cygwin))))
 
-(defun sound-wav--do-play-by-wmm (files)
+(defun esonify-sound-wav--do-play-by-wmm (files)
   (deferred:$
     (deferred:process
       "ruby"
@@ -105,40 +109,46 @@
        files
        ";"))))
 
-(defun sound-wav--do-play-by-afplay (files)
+(defun esonify-sound-wav--do-play-by-afplay (files)
   (deferred:$
     (deferred:process-shell
       (format "echo \"%s\" | awk '{ print \"afplay \" $0 }' | bash"
               (mapconcat 'identity files "\n")))))
 
-(defun sound-wav--do-play-by-aplay (files)
+(defun esonify-sound-wav--do-play-by-aplay (files)
   (deferred:$
     (apply 'deferred:process "aplay" files)))
 
-(defun sound-wav--do-play (files)
-  (cond ((sound-wav--powershell-sound-player-process-p)
-	 (sound-wav--do-play-by-powershell-process files))
-	((sound-wav--powershell-sound-player-p)
-	 (sound-wav--do-play-by-powershell files))
-	((sound-wav--window-media-player-p)
-         (sound-wav--do-play-by-wmm files))
+(defun esonify-sound-wav--do-play (files &optional inturruptp)
+  (cond ((esonify-sound-wav--powershell-sound-player-process-p)
+	 (esonify-sound-wav--do-play-by-powershell-process files inturruptp))
+	((esonify-sound-wav--powershell-sound-player-p)
+	 (esonify-sound-wav--do-play-by-powershell files inturruptp))
+	((esonify-sound-wav--window-media-player-p)
+         (esonify-sound-wav--do-play-by-wmm files))
         ((executable-find "afplay")
-         (sound-wav--do-play-by-afplay files))
+         (esonify-sound-wav--do-play-by-afplay files))
         ((executable-find "aplay")
-         (sound-wav--do-play-by-aplay files))
+         (esonify-sound-wav--do-play-by-aplay files))
         (t
          (error "Not found wav player on your system!!"))))
 
-(defun sound-wav--validate-files (files)
+(defun esonify-sound-wav--validate-files (files)
   (cl-loop for file in files
            when (file-exists-p file)
            collect file))
 
-(defun esonify--sound-wav-play (&rest files)
-  (let ((valid-files (sound-wav--validate-files files)))
+(defun esonify-sound-wav-play (&rest files)
+  (let ((valid-files (esonify-sound-wav--validate-files files)))
     (when (null files)
       (error "No valid files!!"))
     (sound-wav--do-play valid-files)))
 
-(provide 'sound-wav)
-;;; sound-wav.el ends here
+(defun esonify--sound-wav-play-inturrupt (&rest files)
+  (let ((valid-files (esonify-sound-wav--validate-files files)))
+    (when (null files)
+      (error "No valid files!!"))
+    (esonify-sound-wav--do-play valid-files t)))
+
+(provide 'esonify-sound-wav)
+;;; esonify-sound-wav.el ends here

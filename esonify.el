@@ -39,7 +39,7 @@
   (file-name-directory (or load-file-name (buffer-file-name)))
   "Stores the source dir where esonify is stored locally.")
 
-(require 'sound-wav (expand-file-name "./esonify-sound-wav.el" esonify--el-source-dir))
+(require 'esonify-sound-wav)
 
 (defconst esonify--soundpath
   (expand-file-name "./sounds/" esonify--el-source-dir)
@@ -51,15 +51,15 @@
 
 (defun esonify--play-drum(num)
   "Plays one drum sound with pitch NUM."
-  (esonify--sound-wav-play (concat esonify--soundpath "/drum_" (number-to-string num) ".wav")))
+  (esonify--sound-wav-play-inturrupt (concat esonify--soundpath "/drum_" (number-to-string num) ".wav")))
 
 (defun esonify--play-sine(num)
   "Plays one sine sound with pitch NUM."
-  (esonify--sound-wav-play (concat esonify--soundpath "/sine" (number-to-string (gethash num esonify--alphabet-map)) "_1" ".wav")))
+  (esonify--sound-wav-play-inturrupt (concat esonify--soundpath "/sine" (number-to-string (gethash num esonify--alphabet-map)) "_1" ".wav")))
 
 (defun esonify--play-triangle(num)
   "Plays one triangle sound with pitch NUM."
-  (esonify--sound-wav-play (concat esonify--soundpath "/triangle" (number-to-string (% num 37)) "_30.wav")))
+  (esonify--sound-wav-play-inturrupt (concat esonify--soundpath "/triangle" (number-to-string (% num 37)) "_30.wav")))
 
 (defvar esonify--line-to-process nil)
 
@@ -90,7 +90,7 @@
    ((and (>= c 97) (<= c 122))
     (esonify--play-sine c))
    ((and (>= c 65) (<= c 90))
-    (esonify--sound-wav-play (concat esonify--soundpath "/square" (number-to-string (gethash (+ c 32) esonify--alphabet-map)) "_25" ".wav")))
+    (esonify--sound-wav-play-inturrupt (concat esonify--soundpath "/square" (number-to-string (gethash (+ c 32) esonify--alphabet-map)) "_25" ".wav")))
    
    (t
     (esonify--play-triangle c))))
