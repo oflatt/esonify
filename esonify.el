@@ -4,8 +4,8 @@
 
 ;; Author: Oliver Flatt <oflatt@gmail.com>
 ;; URL: https://github.com/oflatt/esonify
-;; Version: 0.02
-;; Package-Requires: ()
+;; Version: 0.0
+;; Package-Requires: ((deferred "0.3.1") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
