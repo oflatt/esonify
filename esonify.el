@@ -27,13 +27,17 @@
 
 ;;; Code:
 
-(defcustom esonify--play-curr-line-delay .4
+(defcustom esonify-play-curr-line-delay .4
   "If non-nil set how long to wait before playing the current line. If nil then there will be no playback of the current line."
   :group 'esonify)
 
-(defcustom esonify--read-speed .1
+(defcustom esonify-read-speed .1
   "Set how long to wait before playing consecutive characters in the current line."
   :group 'esonify)
+
+(defgroup esonify nil
+  "Sonify your code"
+  :group 'Multimedia)
 
 (defconst esonify--el-source-dir
   (file-name-directory (or load-file-name (buffer-file-name)))
@@ -72,7 +76,7 @@
       (progn
 	(esonify--processchar (string-to-char esonify--line-to-process))
 	(setq esonify--line-to-process (substring esonify--line-to-process 1))
-	(setq esonify--current-timer (run-at-time esonify--read-speed nil 'esonify--process-line)))))
+	(setq esonify--current-timer (run-at-time esonify-read-speed nil 'esonify--process-line)))))
 
 (defun esonify--processchar (c)
   "Plays the sound corresponding to the char C."
@@ -102,8 +106,8 @@
     (if (timerp esonify--current-timer)
 	(cancel-timer esonify--current-timer))
     (setq esonify--line-to-process (thing-at-point 'line t))
-    (if esonify--play-curr-line-delay
-	(setq esonify--current-timer (run-at-time esonify--play-curr-line-delay nil 'esonify--process-line)))
+    (if esonify-play-curr-line-delay
+	(setq esonify--current-timer (run-at-time esonify-play-curr-line-delay nil 'esonify--process-line)))
     
 					; make arrows the same as movement commands
     (if (symbolp last-command-event)
